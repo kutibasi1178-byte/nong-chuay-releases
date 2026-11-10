@@ -1,0 +1,25 @@
+(() => {
+ const words={ja:{title:'検品アプリのインストールと登録',intro:'店舗PCからアプリを取得します。インストール済みなら下の「登録を続ける」へ進めます。',download:'アプリをダウンロードする',openApp:'インストール済み・登録を続ける',instructions:'ダウンロードしたファイルを開き、Androidが求めるインストール許可を確認してください。インストール後、このブラウザー画面へ戻って「登録を続ける」を押します。携帯とPCの照合コードを見比べ、PCで許可してから携帯で名前を確認します。',warning:'店舗PCの案内であることを確認してください。証明書や安全性に関する予期しない警告が出た場合は操作を止めて担当者へ連絡してください。'},th:{title:'ติดตั้งและลงทะเบียนแอปตรวจรับสินค้า',intro:'ดาวน์โหลดแอปจาก PC ของร้าน หากติดตั้งแล้วให้กดดำเนินการลงทะเบียนต่อ',download:'ดาวน์โหลดแอป',openApp:'ติดตั้งแล้ว ดำเนินการลงทะเบียนต่อ',instructions:'เปิดไฟล์ที่ดาวน์โหลดและตรวจสอบการอนุญาตติดตั้งจาก Android หลังติดตั้งให้กลับมาหน้าเบราว์เซอร์นี้แล้วกดลงทะเบียนต่อ เปรียบเทียบรหัสบนโทรศัพท์กับ PC อนุญาตบน PC แล้วตรวจสอบชื่อบนโทรศัพท์',warning:'ตรวจสอบว่าเป็นคำแนะนำจาก PC ของร้าน หากพบคำเตือนเกี่ยวกับใบรับรองหรือความปลอดภัยที่ไม่คาดหมาย ให้หยุดและติดต่อผู้ดูแล'}};
+ let language=location.hash==='#th'?'th':'ja';
+ function handoff(){
+  try{
+   if(location.origin+location.pathname!=="https://kutibasi1178-byte.github.io/nong-chuay-releases/install.html"||location.search)return null;
+   const values=new URLSearchParams(location.hash.slice(1)),encoded=values.get('resume');
+   if([...values.keys()].length!==1||values.getAll('resume').length!==1||!encoded||encoded.length>2048||!/^[A-Za-z0-9_-]+$/.test(encoded))return null;
+   const d=JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(encoded.replace(/-/g,'+').replace(/_/g,'/')),c=>c.charCodeAt(0))));
+   const keys=['v','page','pcId','registrationId','language','expiresAt','endpoint','certificateSha256','generation'];
+   if(Object.keys(d).length!==keys.length||keys.some(k=>typeof d[k]!=='string')||d.v!=='2'||!['ja','th'].includes(d.language))return null;
+   if(d.page!==location.origin+location.pathname||!/^pc-[A-Za-z0-9_-]{1,100}$/.test(d.pcId)||!/^registration-[A-Za-z0-9_-]{1,100}$/.test(d.registrationId)||!/^https:\/\//.test(d.endpoint)||!/^\d{1,16}$/.test(d.generation)||Number(d.generation)<1||!(/^[a-f0-9]{64}$/).test(d.certificateSha256))return null;
+   const endpoint=new URL(d.endpoint);if(endpoint.pathname!='/mobile_registration'||endpoint.username||endpoint.password||endpoint.search||endpoint.hash||(location.protocol==='http:'&&endpoint.hostname!==location.hostname))return null;
+   const expiry=Date.parse(d.expiresAt);if(!Number.isFinite(expiry)||expiry<=Date.now()||expiry>Date.now()+600000)return null;
+   return {encoded,language:d.language};
+  }catch(_){return null;}
+ }
+ function render(){const h=handoff();document.documentElement.lang=language;for(const [id,text] of Object.entries(words[language]))document.getElementById(id).textContent=text;document.getElementById('source').textContent=location.origin;
+  const open=document.getElementById('openApp');open.hidden=!h;if(h)open.href='foodinventory://installation/resume?data='+encodeURIComponent(h.encoded);else open.removeAttribute('href');
+  if(location.hash.startsWith('#resume=')&&!h)document.getElementById('warning').textContent=language==='th'?'QR ไม่ถูกต้องหรือหมดอายุ กรุณาออกใหม่บน PC':'QRが無効または期限切れです。PCで再発行してください。';
+ }
+ const initial=handoff();if(initial)language=initial.language;
+ document.getElementById('ja').addEventListener('click',()=>{language='ja';render();});document.getElementById('th').addEventListener('click',()=>{language='th';render();});
+ addEventListener('hashchange',render);setInterval(render,1000);render();
+})();
