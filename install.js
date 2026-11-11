@@ -24,16 +24,16 @@
   document.getElementById('ja').hidden=ownerMode;document.getElementById('th').hidden=ownerMode;
   const download=document.getElementById('download');
   download.style.display=ownerMode&&installationStarted?'none':'';
-  if(ownerMode){owner.hidden=!installationStarted;open.hidden=!installationStarted;}
+  if(ownerMode){owner.hidden=true;open.hidden=!installationStarted;}
   if(h&&h.data.v==='3'){
-   const d={...h.data,nameConfirmed:'true'},bytes=new TextEncoder().encode(JSON.stringify(d));let raw='';for(const b of bytes)raw+=String.fromCharCode(b);
+   const d={...h.data,nameConfirmed:'false'},bytes=new TextEncoder().encode(JSON.stringify(d));let raw='';for(const b of bytes)raw+=String.fromCharCode(b);
    const encoded=btoa(raw).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
    open.href='intent://installation/resume?data='+encoded+'#Intent;scheme=foodinventory;package=com.example.food_inventory_app;end';
-   owner.textContent=language==='th'?'คุณคือ '+d.displayName+' ใช่ไหม?':'あなたは'+d.displayName+'さんですか？';
-   open.textContent=language==='th'?'ใช่':'はい';
+   owner.textContent='';
+   open.textContent=language==='th'?'ติดตั้งแล้ว ลงทะเบียนต่อ':'インストール後、登録を続ける';
    document.getElementById('intro').textContent=language==='th'?'ติดตั้งแอปแล้วตรวจสอบชื่อ หากชื่อไม่ถูกต้อง อย่ากดใช่ ให้เริ่มใหม่บน PC':'アプリをインストールして、お名前を確認してください。名前が違う場合は「はい」を押さず、PC側でやり直してください。';
    document.getElementById('download').textContent=language==='th'?'ติดตั้งแอป':'アプリをインストール';
-   document.getElementById('instructions').textContent=language==='th'?'เปิดจากข้อความดาวน์โหลดเสร็จและติดตั้งตามคำแนะนำ หากแอปแสดงปุ่มลงทะเบียนต่อให้กด แล้วตรวจสอบชื่อด้านล่าง':'ダウンロード完了表示からファイルを開き、画面の案内に沿ってインストールしてください。アプリに「登録を続ける」が表示されたら押してください。この画面では、下のお名前を確認してください。';
+   document.getElementById('instructions').textContent=language==='th'?'เปิดจากข้อความดาวน์โหลดเสร็จและติดตั้ง กดเสร็จสิ้นหรือเปิดก็ได้ หากแอปแสดงลงทะเบียนต่อให้กด เมื่อกลับมาหน้านี้ให้กดปุ่มด้านล่าง แล้วตรวจสอบชื่อในแอป':'ダウンロード完了表示からファイルを開き、インストールしてください。最後は「完了」「開く」のどちらでも構いません。アプリに「登録を続ける」が出たら押してください。この画面に戻ったら下のボタンで進み、アプリ内でお名前を確認します。';
   }
   if(location.hash.startsWith('#resume=')&&!h)document.getElementById('warning').textContent=language==='th'?'QR ไม่ถูกต้องหรือหมดอายุ กรุณาออกใหม่บน PC':'QRが無効または期限切れです。PCで再発行してください。';
  }
