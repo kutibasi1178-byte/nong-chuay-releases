@@ -5,18 +5,30 @@
   try{
    if(location.origin+location.pathname!=="https://kutibasi1178-byte.github.io/nong-chuay-releases/install.html"||location.search)return null;
    const values=new URLSearchParams(location.hash.slice(1)),encoded=values.get('resume');
-   if([...values.keys()].length!==1||values.getAll('resume').length!==1||!encoded||encoded.length>2048||!/^[A-Za-z0-9_-]+$/.test(encoded))return null;
+   if([...values.keys()].length!==1||values.getAll('resume').length!==1||!encoded||encoded.length>4096||!/^[A-Za-z0-9_-]+$/.test(encoded))return null;
    const d=JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(encoded.replace(/-/g,'+').replace(/_/g,'/')),c=>c.charCodeAt(0))));
    const keys=['v','page','pcId','registrationId','language','expiresAt','endpoint','certificateSha256','generation'];
-   if(Object.keys(d).length!==keys.length||keys.some(k=>typeof d[k]!=='string')||d.v!=='2'||!['ja','th'].includes(d.language))return null;
+   if(d.v==='3')keys.push('enrollmentToken','displayName','nameConfirmed');
+   if(Object.keys(d).length!==keys.length||keys.some(k=>typeof d[k]!=='string')||!['2','3'].includes(d.v)||!['ja','th'].includes(d.language))return null;
+   if(d.v==='3'&&(!/^[A-Za-z0-9_-]{43}$/.test(d.enrollmentToken)||!d.displayName.trim()||d.displayName.length>200||!['true','false'].includes(d.nameConfirmed)))return null;
    if(d.page!==location.origin+location.pathname||!/^pc-[A-Za-z0-9_-]{1,100}$/.test(d.pcId)||!/^registration-[A-Za-z0-9_-]{1,100}$/.test(d.registrationId)||!/^https:\/\//.test(d.endpoint)||!/^\d{1,16}$/.test(d.generation)||Number(d.generation)<1||!(/^[a-f0-9]{64}$/).test(d.certificateSha256))return null;
    const endpoint=new URL(d.endpoint);if(endpoint.pathname!='/mobile_registration'||endpoint.username||endpoint.password||endpoint.search||endpoint.hash||(location.protocol==='http:'&&endpoint.hostname!==location.hostname))return null;
    const expiry=Date.parse(d.expiresAt);if(!Number.isFinite(expiry)||expiry<=Date.now()||expiry>Date.now()+600000)return null;
-   return {encoded,language:d.language};
+   return {encoded,language:d.language,data:d};
   }catch(_){return null;}
  }
  function render(){const h=handoff();document.documentElement.lang=language;for(const [id,text] of Object.entries(words[language]))document.getElementById(id).textContent=text;document.getElementById('source').textContent=location.origin;
   const open=document.getElementById('openApp');open.hidden=!h;if(h)open.href='foodinventory://installation/resume?data='+encodeURIComponent(h.encoded);else open.removeAttribute('href');
+  const owner=document.getElementById('ownerName');owner.hidden=!(h&&h.data.v==='3');
+  if(h&&h.data.v==='3'){
+   const d={...h.data,nameConfirmed:'true'},bytes=new TextEncoder().encode(JSON.stringify(d));let raw='';for(const b of bytes)raw+=String.fromCharCode(b);
+   const encoded=btoa(raw).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+   open.href='intent://installation/resume?data='+encoded+'#Intent;scheme=foodinventory;package=com.example.food_inventory_app;end';
+   owner.textContent=language==='th'?'คุณคือ '+d.displayName+' ใช่ไหม?':'あなたは'+d.displayName+'さんですか？';
+   open.textContent=language==='th'?'ใช่ เริ่มใช้งานด้วยชื่อนี้':'はい、この名前で始める';
+   document.getElementById('download').textContent=language==='th'?'ติดตั้งแอป':'アプリをインストール';
+   document.getElementById('instructions').textContent=language==='th'?'กดเปิดจากข้อความดาวน์โหลดเสร็จ ติดตั้งแล้วกดเสร็จสิ้น จากนั้นตรวจสอบชื่อและกดเริ่มใช้งาน':'ダウンロード完了表示の「開く」からインストールし、最後に「完了」を押してください。この画面が再表示されたら、下のお名前を確認して始めます。';
+  }
   if(location.hash.startsWith('#resume=')&&!h)document.getElementById('warning').textContent=language==='th'?'QR ไม่ถูกต้องหรือหมดอายุ กรุณาออกใหม่บน PC':'QRが無効または期限切れです。PCで再発行してください。';
  }
  const initial=handoff();if(initial)language=initial.language;
